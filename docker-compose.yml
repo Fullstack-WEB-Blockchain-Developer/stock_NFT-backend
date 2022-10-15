@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+    dev:
+        container_name: app_dev
+        image: app-dev:1.0.0
+        build:
+            context: .
+            target: development
+            dockerfile: ./Dockerfile
+        command: sh -c "npm install && npm run start:dev"
+        depends_on:
+          - postgres-prod
+          - postgres-test
+        env_file:
+          - .development.env
+        ports:
+            - 5000:5000
+            - 9229:9229
+        volumes:
+            - .:/usr/src/app
+            - /usr/src/app/node_modules
+        restart: unless-stopped
+    prod:
+        container_name: app_prod
+        image: app-prod:1.0.0
+        build:
+            context: .
+            target: production
+            dockerfile: ./Dockerfile
+        command: npm run start:prod
+        depends_on:
+          - postgres-prod
+        env_file:
+          - .production.env
+        ports:
+            - 5000:5000
+            - 9229:9229
+        volumes:
+            - .:/usr/src/app
+            - /usr/src/app/node_modules
+        restart: unless-stopped
+    postgres-prod:
+      container_name: postgres-dev
+      image: postgres:12
+      env_file:
+        - .production.env
+      environment:
+        PG_DATA: /var/lib/postgresql/data
+      ports:
+        - 5432:5432
+      volumes:
+        - pgdata:/var/lib/postgresql/data
+      restart: unless-stopped
+    postgres-test:
+      container_name: postgres-test
+      image: postgres:12
+      env_file:
+        - .production.env
+      environment:
+        - POSTGRES_USER=postgres
+        - POSTGRES_PASSWORD=root
+        - POSTGRES_DB=stoke_nft_test
+      ports:
+        - 5433:5432
+      volumes:
+        - pgdata:/var/lib/postgresql/data
+      restart: unless-stopped
+
+volumes:
+  pgdata:
